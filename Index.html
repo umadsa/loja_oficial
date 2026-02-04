@@ -1,0 +1,412 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  ShoppingCart, Search, Menu, X, Star, ChevronRight, CheckCircle, 
+  Smartphone, Truck, CreditCard, ArrowLeft, Phone, Instagram, 
+  Facebook, ShieldCheck, UserCheck, Copy, QrCode, Ticket, Shirt, BookOpen 
+} from 'lucide-react';
+
+// --- CONFIGURAÇÕES DE IDENTIDADE ---
+const LOGO_URL = "https://adsabrasil-embuguacu.github.io/conferenciabiblicaEBD_checkout/adminstrator/img/logo.png";
+const PRIMARY_COLOR = "#0f172a"; 
+const ACCENT_COLOR = "#3b82f6";  
+
+// --- MOCK DATA - PRODUTOS UMADSA ---
+const PRODUCTS = [
+  {
+    id: 1,
+    name: 'Camiseta Oficial UMADSA 2024 - "Legado"',
+    price: 59.90,
+    oldPrice: 75.00,
+    category: 'Vestuário',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=800',
+    description: 'Camiseta premium 100% algodão penteado. Estampa em silk-screen de alta durabilidade com o tema do ano.',
+    sizes: ['P', 'M', 'G', 'GG', 'XG'],
+    colors: ['Azul Marinho', 'Branco', 'Preto']
+  },
+  {
+    id: 2,
+    name: 'Moletom Canguru UMADSA Heritage',
+    price: 149.90,
+    oldPrice: 189.00,
+    category: 'Vestuário',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800',
+    description: 'Moletom flanelado com capuz e bolso frontal. Ideal para os congressos de inverno.',
+    sizes: ['P', 'M', 'G', 'GG'],
+    colors: ['Cinza Mescla', 'Azul Marinho']
+  },
+  {
+    id: 3,
+    name: 'Ingresso: Conferência Bíblica EBD 2024',
+    price: 35.00,
+    oldPrice: 50.00,
+    category: 'Eventos',
+    image: 'https://images.unsplash.com/photo-1504103087323-ee2bd702cc44?auto=format&fit=crop&q=80&w=800',
+    description: 'Acesso total aos dois dias de evento, material de apoio e certificado de participação digital.',
+    sizes: ['Lote Único'],
+    colors: ['Digital']
+  }
+];
+
+const CATEGORIES = ['Todos', 'Vestuário', 'Eventos', 'Livros', 'Acessórios'];
+
+const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+
+export default function App() {
+  const [view, setView] = useState('home'); 
+  const [cart, setCart] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  const [formData, setFormData] = useState({
+    nome: '', whatsapp: '', cpf: '', setor: '', congregacao: ''
+  });
+
+  useEffect(() => { window.scrollTo(0, 0); }, [view]);
+
+  const addToCart = (product, color = null, size = null) => {
+    const cartId = `${product.id}-${color || 'default'}-${size || 'default'}`;
+    const existing = cart.find(item => item.cartId === cartId);
+    
+    if (existing) {
+      setCart(cart.map(item => item.cartId === cartId ? { ...item, quantity: item.quantity + 1 } : item));
+    } else {
+      setCart([...cart, { 
+        ...product, 
+        cartId,
+        quantity: 1, 
+        selectedColor: color || (product.colors ? product.colors[0] : null),
+        selectedSize: size || (product.sizes ? product.sizes[0] : null)
+      }]);
+    }
+    setIsCartOpen(true);
+  };
+
+  const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
+  const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  const Header = () => (
+    <header className="sticky top-0 z-50 bg-white shadow-sm font-sans">
+      <div className="bg-[#0f172a] text-white text-[10px] md:text-xs py-2 text-center font-bold tracking-[0.2em] uppercase px-4">
+        União das Mocidades da Assembleia de Deus de Santo Amaro
+      </div>
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+        <button className="md:hidden text-slate-900" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('home')}>
+          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
+             <img src={LOGO_URL} alt="UMADSA" className="w-8 h-8 object-contain" onError={(e) => e.target.src = "https://cdn-icons-png.flaticon.com/512/2874/2874802.png"} />
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="text-xl font-black text-slate-900 leading-none tracking-tighter">LOJA <span className="text-blue-600">UMADSA</span></h1>
+            <p className="text-[9px] text-slate-400 font-bold tracking-widest uppercase">Oficial Department</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:bg-slate-50 rounded-full transition-colors">
+            <ShoppingCart size={24} className="text-slate-800" />
+            {cartCount > 0 && (
+              <span className="absolute top-0 right-0 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
+                {cartCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+
+  const Hero = () => (
+    <div className="relative bg-slate-900 text-white overflow-hidden h-64 md:h-[400px]">
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent z-10"></div>
+      <img 
+        src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=2000" 
+        className="absolute inset-0 w-full h-full object-cover opacity-30"
+        alt="Congresso UMADSA"
+      />
+      <div className="container mx-auto px-4 h-full flex items-center relative z-20">
+        <div className="max-w-xl">
+          <span className="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-sm mb-4 inline-block uppercase tracking-widest">Store v2.0</span>
+          <h1 className="text-4xl md:text-6xl font-black mb-4 leading-tight italic uppercase tracking-tighter">
+            Vista a <span className="text-blue-500">Causa</span>
+          </h1>
+          <p className="text-slate-300 mb-8 text-sm md:text-lg">Produtos oficiais para os jovens da Assembleia de Deus de Santo Amaro.</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const Checkout = () => {
+    const [pixStatus, setPixStatus] = useState('pending');
+
+    const handleFinalize = (e) => {
+      e.preventDefault();
+      setPixStatus('generating');
+      setTimeout(() => setPixStatus('ready'), 1500);
+    };
+
+    if (pixStatus === 'ready') {
+      return (
+        <div className="container mx-auto px-4 py-12 max-w-2xl text-center animate-in fade-in duration-500">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 flex flex-col items-center">
+            <QrCode size={48} className="text-blue-600 mb-4" />
+            <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight italic">Pagamento via Pix</h2>
+            <p className="text-slate-500 text-sm mb-8 font-medium">Escaneie o QR Code abaixo ou copie a chave para finalizar.</p>
+            
+            <div className="bg-slate-50 p-6 rounded-3xl mb-8 border-2 border-blue-50 shadow-inner">
+               <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226850014br.gov.bcb.pix011112345678901520400005303986540535.005802BR5913LOJA_UMADSA6009SAO_PAULO62070503***6304CA1B" className="w-48 h-48" alt="QR Code Pix" />
+            </div>
+
+            <div className="w-full mb-8">
+              <div className="flex items-center gap-2 bg-slate-100 p-4 rounded-2xl">
+                 <input readOnly value="00020101021226850014br.gov.bcb.pix..." className="bg-transparent border-none text-xs text-slate-500 flex-1 outline-none font-mono" />
+                 <button className="p-2 bg-white rounded-xl text-blue-600 shadow-sm active:scale-95 transition-transform" onClick={() => {
+                   document.execCommand('copy');
+                 }}>
+                   <Copy size={18} />
+                 </button>
+              </div>
+            </div>
+
+            <div className="w-full space-y-3">
+              <button onClick={() => setView('success')} className="w-full bg-green-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-green-100 hover:bg-green-700 transition-all">
+                CONFIRMAR PAGAMENTO
+              </button>
+              <button onClick={() => setView('home')} className="w-full text-slate-400 font-bold py-2 text-[10px] uppercase tracking-widest">
+                CANCELAR PEDIDO
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <div className="space-y-8 animate-in slide-in-from-left-5 duration-500">
+            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic">Checkout <span className="text-blue-600">Seguro</span></h2>
+            
+            <form onSubmit={handleFinalize} className="space-y-6">
+              <section className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-4 mb-8">
+                   <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-black">1</div>
+                   <h3 className="font-black text-slate-900 uppercase tracking-tight">Seus Dados</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Nome Completo</label>
+                    <input required className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500" placeholder="Nome para o certificado/entrega" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">WhatsApp</label>
+                    <input required className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500" placeholder="(11) 99999-9999" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">CPF</label>
+                    <input required className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500" placeholder="000.000.000-00" />
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex items-center gap-4 mb-8">
+                   <div className="w-10 h-10 bg-slate-900 text-white rounded-full flex items-center justify-center font-black">2</div>
+                   <h3 className="font-black text-slate-900 uppercase tracking-tight">Setor / Igreja</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Setor UMADSA</label>
+                    <select className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500 appearance-none">
+                       <option>Selecione seu Setor</option>
+                       <option>Setor 01 - Sede</option>
+                       <option>Setor 22 - Embu Guaçu</option>
+                       <option>Setor 34 - Cipó</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Congregação</label>
+                    <input className="w-full p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500" placeholder="Sua congregação" />
+                  </div>
+                </div>
+              </section>
+
+              <button type="submit" className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-100 hover:bg-slate-900 transition-all flex items-center justify-center gap-3">
+                {pixStatus === 'generating' ? 'Processando...' : <>GERAR PAGAMENTO <ChevronRight size={18} /></>}
+              </button>
+            </form>
+          </div>
+
+          <div className="lg:sticky lg:top-24 h-fit animate-in slide-in-from-right-5 duration-500">
+            <div className="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-2xl">
+              <h3 className="text-xl font-black uppercase mb-8 italic tracking-tighter flex items-center gap-2">
+                Resumo <span className="text-blue-500 text-xs tracking-normal">({cartCount} itens)</span>
+              </h3>
+              <div className="space-y-4 mb-8 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                {cart.map(item => (
+                  <div key={item.cartId} className="flex justify-between items-center border-b border-white/5 pb-4">
+                    <div className="flex gap-4">
+                      <img src={item.image} className="w-12 h-12 rounded-xl object-cover border border-white/10" />
+                      <div>
+                         <p className="text-xs font-bold">{item.name}</p>
+                         <p className="text-[9px] text-slate-400 uppercase tracking-widest">{item.selectedSize}</p>
+                      </div>
+                    </div>
+                    <p className="text-xs font-black">{formatCurrency(item.price * item.quantity)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-end pt-4">
+                <div>
+                   <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-1">Total do Pedido</p>
+                   <p className="text-4xl font-black text-blue-500">{formatCurrency(cartTotal)}</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 p-6 bg-blue-50 rounded-3xl border border-blue-100 flex items-center gap-4">
+               <ShieldCheck className="text-blue-600 flex-shrink-0" size={32} />
+               <p className="text-[11px] text-blue-900 font-bold leading-tight">Ao finalizar, você garante sua participação e ajuda na obra do Senhor. O comprovante do Pix será seu ingresso.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-slate-50 min-h-screen font-sans">
+      {view !== 'checkout' && view !== 'success' && <Header />}
+      
+      {view === 'home' && (
+        <main>
+          <Hero />
+          <div className="container mx-auto px-4 py-16">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+               <div>
+                  <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter italic">Destaques <span className="text-blue-600">UMADSA</span></h2>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Loja Oficial Setor 22 e Sede</p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+              {PRODUCTS.map(product => (
+                <div key={product.id} className="bg-white group rounded-[2rem] border border-slate-100 overflow-hidden flex flex-col hover:shadow-3xl hover:shadow-blue-900/10 transition-all duration-500 p-3">
+                  <div className="relative pt-[90%] overflow-hidden rounded-2xl cursor-pointer" onClick={() => { setSelectedProduct(product); setView('product'); }}>
+                    <img src={product.image} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                  </div>
+                  <div className="p-5 flex flex-col flex-grow">
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest mb-2">{product.category}</span>
+                    <h3 className="font-bold text-slate-900 mb-2 leading-tight group-hover:text-blue-600 transition-colors cursor-pointer" onClick={() => { setSelectedProduct(product); setView('product'); }}>{product.name}</h3>
+                    <div className="mt-auto">
+                      <p className="text-2xl font-black text-slate-900 mb-4">{formatCurrency(product.price)}</p>
+                      <button onClick={() => addToCart(product)} className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">
+                        Adicionar ao Carrinho
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
+      )}
+
+      {view === 'product' && selectedProduct && (
+        <div className="container mx-auto px-4 py-12 max-w-6xl">
+           <button onClick={() => setView('home')} className="flex items-center gap-2 text-slate-400 hover:text-blue-600 mb-8 font-black text-[10px] uppercase tracking-widest transition-colors">
+              <ArrowLeft size={16} /> Voltar
+           </button>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
+              <div className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm flex items-center justify-center">
+                 <img src={selectedProduct.image} className="w-full max-h-[600px] object-cover rounded-[2rem]" />
+              </div>
+              <div className="flex flex-col justify-center">
+                 <span className="text-blue-600 font-black text-[10px] uppercase tracking-[0.3em] mb-4">{selectedProduct.category}</span>
+                 <h1 className="text-4xl lg:text-5xl font-black text-slate-900 mb-6 leading-tight uppercase tracking-tighter italic">{selectedProduct.name}</h1>
+                 <p className="text-slate-500 text-lg mb-10 leading-relaxed font-medium">{selectedProduct.description}</p>
+                 
+                 <div className="flex flex-col gap-4 mb-10">
+                    <div className="flex items-baseline gap-2">
+                       <p className="text-5xl font-black text-slate-900">{formatCurrency(selectedProduct.price)}</p>
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Pix</span>
+                    </div>
+                 </div>
+
+                 <button onClick={() => addToCart(selectedProduct)} className="w-full bg-blue-600 text-white font-black py-6 rounded-3xl text-xs uppercase tracking-[0.2em] shadow-2xl shadow-blue-200 hover:bg-slate-900 transition-all">
+                    GARANTIR O MEU AGORA
+                 </button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {view === 'checkout' && <Checkout />}
+      
+      {view === 'success' && (
+        <div className="container mx-auto px-4 py-24 text-center">
+           <CheckCircle size={80} className="text-green-500 mx-auto mb-8 animate-bounce" />
+           <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter mb-4 italic">Pedido <span className="text-blue-600">Enviado</span>!</h1>
+           <p className="text-slate-500 max-w-md mx-auto mb-12 font-medium">Glória a Deus! Seu pedido foi registrado. Agora é só aguardar a validação e retirar no congresso ou setor.</p>
+           <button onClick={() => setView('home')} className="bg-slate-900 text-white font-black py-5 px-12 rounded-2xl uppercase text-[10px] tracking-widest shadow-xl">
+             VOLTAR PARA A LOJA
+           </button>
+        </div>
+      )}
+
+      {/* Cart Drawer */}
+      <div className={`fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[100] transition-opacity duration-300 ${isCartOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsCartOpen(false)} />
+      <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white z-[101] shadow-3xl transform transition-transform duration-500 ${isCartOpen ? 'translate-x-0' : 'translate-x-full'} flex flex-col`}>
+         <div className="p-8 border-b flex items-center justify-between">
+            <h2 className="text-xl font-black uppercase italic tracking-tighter">Meu Carrinho</h2>
+            <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
+               <X size={20} />
+            </button>
+         </div>
+         <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            {cart.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-200">
+                <ShoppingCart size={64} className="mb-4" />
+                <p className="font-black text-[10px] uppercase tracking-widest">Carrinho Vazio</p>
+              </div>
+            ) : (
+              cart.map(item => (
+                <div key={item.cartId} className="flex gap-4">
+                  <img src={item.image} className="w-16 h-16 rounded-2xl object-cover shadow-sm" />
+                  <div className="flex-1">
+                    <h3 className="text-[11px] font-black text-slate-900 uppercase leading-tight">{item.name}</h3>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">{item.quantity} un.</p>
+                    <div className="flex items-center justify-between mt-2">
+                       <p className="font-black text-sm text-blue-600">{formatCurrency(item.price)}</p>
+                       <button onClick={() => removeFromCart(item.cartId)} className="text-red-400 hover:text-red-600 transition-colors">
+                         <X size={14} />
+                       </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+         </div>
+         {cart.length > 0 && (
+           <div className="p-8 bg-slate-50 border-t rounded-t-[2rem]">
+              <div className="flex justify-between items-center mb-8">
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subtotal</span>
+                 <span className="text-2xl font-black text-slate-900">{formatCurrency(cartTotal)}</span>
+              </div>
+              <button 
+                onClick={() => { setIsCartOpen(false); setView('checkout'); }}
+                className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl uppercase text-[10px] tracking-widest shadow-xl shadow-blue-100 hover:bg-slate-900 transition-all"
+              >
+                IR PARA O CHECKOUT
+              </button>
+           </div>
+         )}
+      </div>
+    </div>
+  );
+}
